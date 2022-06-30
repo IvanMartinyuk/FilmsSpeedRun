@@ -13,14 +13,14 @@ namespace BLL.Services
 {
     public class FilmService : GenericService<FilmDTO, Film>
     {
-        List<FilmDTO> films { get; set; }
-        string Mode { get; set; } = "base";
+        //List<FilmDTO> films { get; set; }
+        //string Mode { get; set; } = "base";
         FilmContext context;
         public FilmService(FilmContext context)
         {
             this.context = context;
             Repository = new FilmRepository(context);
-            films = GetAll().ToList();
+            //films = GetAll().ToList();
             MapperConfiguration config = new MapperConfiguration(con =>
             {
                 con.CreateMap<Film, FilmDTO>().ReverseMap();
@@ -68,57 +68,64 @@ namespace BLL.Services
         {
             return context.Films.Count();
         }
-        public List<FilmDTO> GetSortedPage(string property, int page, List<FilmDTO> fs)
+        public List<FilmDTO> Search(string title, int page = 0)
         {
-            if (Mode == property)
-            {
-                if (property == "dateofpublishing")
-                    fs.OrderByDescending(x => x.DateOfPublishing).ToList();
-                if (property == "rating")
-                    fs.OrderByDescending(x => x.Rating).ToList();
-                if (property == "title")
-                    fs.OrderByDescending(x => x.Title).ToList();
-                if (property == "base")
-                    fs = GetAll().ToList();
-            }
-            Mode = property;
-            int start = page * 10;
-            if (start >= films.Count())
-                start = films.Count() - 11;
-            if (start < 0)
-                start = 0;
-            int end = start + 10;
-            if (end >= films.Count())
-                end = films.Count() - 1;
-            if (end < 0)
-                end = 0;
-            return fs.GetRange(start, end);
+            return Mapper.Map<List<Film>, List<FilmDTO>>(((FilmRepository)Repository).Search(title, page));
         }
-        public List<FilmDTO> SortedFilter(FilterOptions options)
-        {            
-            List<FilmDTO> fs = new List<FilmDTO>();
-            foreach(var film in films)
-            {
-                List<string> genres = GetGenres(film.Id).Select(x => x.Name).ToList();
-                if (options.Genre == "all")
-                {
-                    if (film.DateOfPublishing >= options.DateTop
-                    && film.DateOfPublishing <= options.DateLast
-                    && film.Rating >= options.RatingTop
-                    && film.Rating <= options.RatingLast)
-                        fs.Add(film);
-                }
-                else
-                {
-                    if (film.DateOfPublishing >= options.DateTop
-                    && film.DateOfPublishing <= options.DateLast
-                    && film.Rating >= options.RatingTop
-                    && film.Rating <= options.RatingLast
-                    && genres.Contains(options.Genre))
-                        fs.Add(film);
-                }
-            }
-            return fs;
-        }
+        public List<FilmDTO> GetSortedPage(FilterOptions options) => Mapper.Map<List<Film>, List<FilmDTO>>(
+                                                                                        ((FilmRepository)Repository)
+                                                                                        .GetSortedFilter(options));
+        //public List<FilmDTO> GetSortedPage(string property, int page, List<FilmDTO> fs)
+        //{
+        //    if (Mode == property)
+        //    {
+        //        if (property == "dateofpublishing")
+        //            fs.OrderByDescending(x => x.DateOfPublishing).ToList();
+        //        if (property == "rating")
+        //            fs.OrderByDescending(x => x.Rating).ToList();
+        //        if (property == "title")
+        //            fs.OrderByDescending(x => x.Title).ToList();
+        //        if (property == "base")
+        //            fs = GetAll().ToList();
+        //    }
+        //    Mode = property;
+        //    int start = page * 10;
+        //    if (start >= films.Count())
+        //        start = films.Count() - 11;
+        //    if (start < 0)
+        //        start = 0;
+        //    int end = start + 10;
+        //    if (end >= films.Count())
+        //        end = films.Count() - 1;
+        //    if (end < 0)
+        //        end = 0;
+        //    return fs.GetRange(start, end);
+        //}
+        //public List<FilmDTO> SortedFilter(FilterOptions options)
+        //{            
+        //    List<FilmDTO> fs = new List<FilmDTO>();
+        //    foreach(var film in films)
+        //    {
+        //        List<string> genres = GetGenres(film.Id).Select(x => x.Name).ToList();
+        //        if (options.Genre == "all")
+        //        {
+        //            if (film.DateOfPublishing >= options.DateTop
+        //            && film.DateOfPublishing <= options.DateLast
+        //            && film.Rating >= options.RatingTop
+        //            && film.Rating <= options.RatingLast)
+        //                fs.Add(film);
+        //        }
+        //        else
+        //        {
+        //            if (film.DateOfPublishing >= options.DateTop
+        //            && film.DateOfPublishing <= options.DateLast
+        //            && film.Rating >= options.RatingTop
+        //            && film.Rating <= options.RatingLast
+        //            && genres.Contains(options.Genre))
+        //                fs.Add(film);
+        //        }
+        //    }
+        //    return fs;
+        //}
     }
 }

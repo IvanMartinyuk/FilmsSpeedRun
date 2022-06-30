@@ -1,8 +1,10 @@
 ﻿using DAL.Context;
+using FilmsSpeedRunAPI;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,6 +15,60 @@ namespace DAL.Repositories
         public FilmRepository(FilmContext context) : base(context)
         {
 
+        }
+        public List<Film> Search(string title, int page = 0)
+        {
+            FilmContext con = (FilmContext)context;
+            return con.Films.Where(x => x.Title.ToLower().Contains(title.ToLower()))
+                            .Skip(page * 10)
+                            .Take(10)
+                            .ToList();
+        }
+        public List<Film> GetSortedFilter(FilterOptions options)
+        {
+            //also you need to think about non genre filter
+            FilmContext con = (FilmContext)context;
+            switch (options.SortBy.ToLower())
+            {
+                case "releasedate":
+                    return con.Films
+                                .OrderByDescending(x => x.DateOfPublishing)
+                                .Where(x => x.ImdbRating >= options.ImdbRatingTop && x.ImdbRating <= options.ImdbRatingLast)
+                                .Where(x => x.LocalRating >= options.LocalRatingTop && x.LocalRating <= options.LocalRatingLast)
+                                .Where(x => x.DateOfPublishing >= options.DateTop && x.DateOfPublishing <= options.DateLast)
+                                //.Where(x => x.Genres.Contains(con.Genres.FirstOrDefault(x => x.Name == options.Genre)))
+                                .Skip(options.Page * 10)
+                                .Take(10)
+                                .ToList();
+                case "localrating":
+                    return SortAndFilter(options, x => x.LocalRating);
+                case "imdbrating":
+                    return SortAndFilter(options, x => x.ImdbRating);
+                case "title":
+                    return SortAndFilter(options, x => x.Title);
+                default:
+                    return con.Films
+                                .Where(x => x.ImdbRating >= options.ImdbRatingTop && x.ImdbRating <= options.ImdbRatingTop)
+                                .Where(x => x.LocalRating >= options.LocalRatingTop && x.LocalRating <= options.LocalRatingLast)
+                                .Where(x => x.DateOfPublishing >= options.DateTop && x.DateOfPublishing <= options.DateLast)
+                                .Where(x => x.Genres.Contains(con.Genres.FirstOrDefault(x => x.Name == options.Genre)))
+                                .Skip((options.Page - 1) * 10)
+                                .Take(10)
+                                .ToList();
+            }
+        }
+        List<Film> SortAndFilter(FilterOptions options, Expression<Func<Film, object>> selector)
+        {
+            FilmContext con = (FilmContext)context;
+            return con.Films
+                        .OrderByDescending(selector)
+                        .Where(x => x.ImdbRating >= options.ImdbRatingTop && x.ImdbRating <= options.ImdbRatingTop)
+                        .Where(x => x.LocalRating >= options.LocalRatingTop && x.LocalRating <= options.LocalRatingLast)
+                        .Where(x => x.DateOfPublishing >= options.DateTop && x.DateOfPublishing <= options.DateLast)
+                        .Where(x => x.Genres.Contains(con.Genres.FirstOrDefault(x => x.Name == options.Genre)))
+                        .Skip(options.Page * 10)
+                        .Take(10)
+                        .ToList();
         }
         public List<Actor> GetActors(int filmId)
         {
